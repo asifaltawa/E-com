@@ -6,14 +6,19 @@ import {
 } from '../authSlice';
 import { Link, Navigate } from 'react-router-dom';
 import { useForm } from "react-hook-form"
+
+
 export default function Signup () {
+
   const { register, handleSubmit , formState:{errors} } = useForm()
   console.log(errors)
   const dispatch = useDispatch();
   const User = useSelector(selectUserData);
+  console.log(User);
+  
   return (
     <>
-    {User && <Navigate to='/' replace={true}></Navigate> }
+    {User && <Navigate to='/signup/otpverfication' replace={true} state={{email:User.user.email }} ></Navigate> }
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-sm">
           <img
@@ -32,7 +37,8 @@ export default function Signup () {
                       dispatch(createUserAsync({
                         email:data.email,
                         password:data.password,
-                        role:'user'
+                        confirmpassword:data.confirmPassword,
+                        // role:'user'
                       }))
                       console.log(data)})}
           >
@@ -86,7 +92,7 @@ export default function Signup () {
               </div>
               <div className="mt-2">
                 <input
-                  id="confirmPassword"
+                  id="confirmpassword"
                   {...register('confirmPassword',
                               {required:"confirm password is required",
                                validate: (value, formValues) => value === formValues.password || 'password not matching'})}

@@ -6,7 +6,17 @@ const userSchema = new mongoose.Schema({
     addresses:{type:[mongoose.Schema.Types.Mixed]},
     role:{type:String,required:true,default:"user"},
     name:{type:String},
-    order:{type:[mongoose.Schema.Types.Mixed]}
+    order:{type:[mongoose.Schema.Types.Mixed]},
+    active:{type:Boolean,default:false},
+    otp:{type: String,required: true},
+    expireAt: {
+        type: Date,
+        default: Date.now,
+        index: {
+          expireAfterSeconds: 60,
+          partialFilterExpression: { active: false }
+        }
+      }
 })
 
 const virtual = userSchema.virtual('id');

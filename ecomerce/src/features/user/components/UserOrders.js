@@ -20,7 +20,7 @@ export default function UserOrders() {
       {orders.map((order,index)=>(
         <div key={index} className='mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 bg-white mt-8'>
               <div className="mt-8">
-                  <h1 className="text-4xl my-2 font-bold tracking-tight pt-10 text-gray-900">Order # {order.id}</h1>
+                  <h1 className="text-4xl my-2 font-bold tracking-tight pt-10 min-[769px]:text-[24px] min-[360px]:text-[15px] text-gray-900">Order id :- {order.id}</h1>
                   <h3 className='font-extrabold mb-2 '>Status:<span className='text-red-500 font-medium'>{order.status}</span></h3>
                             <div className="flow-root">
                               <ul className="-my-6 divide-y divide-gray-200">
@@ -77,11 +77,11 @@ export default function UserOrders() {
                 <p className="mt-0.5 text-sm text-gray-500"></p>
                 {/* address section */}
                 <div className="border-b border-gray-900/10 pb-6">
-                                <h2 className="text-base font-extrabold leading-7 text-gray-900">Shipping Address</h2>
+                                <h2 className="text-base font-extrabold pt-7 leading-7 text-gray-900">Shipping Address</h2>
                                 <ul  className="divide-y divide-gray-100">
                                     
                     
-                                        <li key={index} className="flex justify-between gap-x-6 py-5 ">
+                                        <li key={index} className="flex flex-col gap-x-6 py-1 ">
                                             <div className="flex min-w-0 gap-x-4">
                                                 <div className="min-w-0 flex-auto">
                                                 <p className="text-sm font-semibold leading-6 text-gray-900">{order.selectAddress[0].name}</p>
@@ -90,9 +90,9 @@ export default function UserOrders() {
                                                 </span>{order.selectAddress[0].phone}</p>
                                                 </div>
                                             </div>
-                                            <div className="hidden shrink-0 sm:flex sm:flex-col sm:items-end">
-                                                <p className="text-sm leading-6 text-gray-900">{order.selectAddress[0].city},{order.selectAddress[0].streetAddress}</p>
-                                                <p className="text-sm leading-6 text-gray-900">{order.selectAddress[0].state}</p>
+                                            <div className="">
+                                                <p className="text-sm leading-6 text-gray-900">{order.selectAddress[0].streetAddress}</p>
+                                                <p className="text-sm leading-6 text-gray-900">{order.selectAddress[0].city},{order.selectAddress[0].state}</p>
                                             </div>
                                         </li>
                                   

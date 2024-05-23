@@ -188,7 +188,7 @@ const UserProfile = () => {
                         </div>
                     </form>}
                     
-                        <h2 className="text-base font-extrabold leading-7 text-gray-900">Your Addresses</h2>
+                        <h2 className="text-base font-extrabold leading-7 pt-10 text-gray-900">Your Addresses:-</h2>
                         { 
                             user.addresses.map((address,index)=>(
                                 <div key={index}>
@@ -203,7 +203,7 @@ const UserProfile = () => {
                                                     <div className='space-y-12'>
                                                         <div className="border-b border-gray-900/10 pb-12">
                                                             <h2 className=" text-2xl font-bold leading-7 text-gray-900">Personal Information</h2>
-                                                            <p className="mt-1 text-sm leading-6 text-gray-600">Use a permanent address where you can receive mail.</p>
+                                                            <p className="mt-1 text-sm leading-6 text-gray-600">Use a permanent address where you can receive your order.</p>
 
                                                             <div className="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
                                                                 <div className="sm:col-span-3">
@@ -332,13 +332,16 @@ const UserProfile = () => {
                                         </div>) : null}
                                         {/* SHOWING ADDRESS SECTION */}
                                     <div className="divide-y divide-gray-100">
-                                        <li  className="flex justify-between sm:flex-none gap-x-6 py-5 ">
+                                        <li  className="sm:flex-col -mt-10 gap-x-6 py-5 ">
                                             <div className="flex min-w-0 gap-x-4">
                                                 <div className="min-w-0 flex-auto">
-                                                <p className="text-sm font-semibold leading-6 text-gray-900">{address.name}</p>
-                                                <p className="mt-1 truncate text-xs leading-5 text-gray-500"><span className='font-bold'>
-                                                Phone: 
-                                                </span>{address.phone}</p>
+                                                    <p className="text-sm font-semibold leading-6 text-gray-900">{address.name}</p>
+                                                    <p className="mt-1 truncate text-xs leading-5 text-gray-500">
+                                                        <span className='font-bold'>
+                                                            Phone: 
+                                                        </span>
+                                                        {address.phone}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <div className=" shrink-0 sm:flex sm:flex-col sm:items-end">

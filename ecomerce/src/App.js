@@ -25,6 +25,7 @@ import AdminHomePage from './pages/AdminHomePage'
 import ProductForm from './features/admin/components/ProductForm';
 import AdminProtected from './features/auth/components/AdminProtected';
 import AdminOrderPage from './pages/AdminOrderPage';
+import SignUpotp from './pages/SignupOtp';
 
 const router = createBrowserRouter([
   {
@@ -57,7 +58,7 @@ const router = createBrowserRouter([
   },
   {
     path:'/order-success/:id',
-    element:<OrderSuccessPage></OrderSuccessPage>
+    element:<Protected><OrderSuccessPage></OrderSuccessPage></Protected>
   },
   {
     path:'/my-orders',
@@ -90,6 +91,10 @@ const router = createBrowserRouter([
   {
     path:'*',
     element:<PageNotFound></PageNotFound>
+  },
+  {
+    path:'/signup/otpverfication',
+    element:<SignUpotp></SignUpotp>
   }
 ])
 function App() {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import {
-} from './OrderSlice';
+import {} from './OrderSlice';
 import styles from './Counter.module.css';
 
 export default function Counter() {
