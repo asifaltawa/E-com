@@ -15,7 +15,8 @@ const initialState = {
   categories: [],
   status: 'idle',
   totalItems:0,
-  selectedProduct:null
+  selectedProduct:null,
+  error: null
 };
 
 
@@ -42,11 +43,19 @@ export const fetchfiltersBrandsAsync  = createAsyncThunk(
   }
 );
 
-export const createProductAsync  = createAsyncThunk(
+export const createProductAsync = createAsyncThunk(
   'product/createProduct',
-  async (product) => {
-    const response = await createProduct(product);
-    return response.data;
+  async (product, { rejectWithValue }) => {
+    try {
+      const response = await createProduct(product);
+      return response;
+    } catch (error) {
+      // Handle duplicate title error specifically
+      if (error.message.includes('already exists')) {
+        return rejectWithValue(error.message);
+      }
+      return rejectWithValue(error.message || 'Failed to create product');
+    }
   }
 );
 
@@ -58,11 +67,22 @@ export const updateProductAsync  = createAsyncThunk(
   }
 );
 
-export const fetchProductsByIdAsync  = createAsyncThunk(
+export const fetchProductsByIdAsync = createAsyncThunk(
   'product/fetchProductsById',
-  async (id) => {
-    const response = await fetchProductsById(id);
-    return response.data;
+  async (id, { rejectWithValue }) => {
+    console.log('productSlice - fetchProductsByIdAsync called with ID:', id);
+    try {
+      const response = await fetchProductsById(id);
+      console.log('productSlice - API response:', response.data);
+      if (!response.data || !response.data.id) {
+        console.error('Invalid data received from API:', response.data);
+        return rejectWithValue('Invalid product data received');
+      }
+      return response.data;
+    } catch (error) {
+      console.error('Error in fetchProductsByIdAsync:', error);
+      return rejectWithValue(error.toString());
+    }
   }
 );
 
@@ -113,28 +133,42 @@ export const productSlice = createSlice({
         state.status = 'idle';
         state.brands = action.payload;
       })
-      .addCase(fetchProductsByIdAsync.pending,(state)=>{
+      .addCase(fetchProductsByIdAsync.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
+        state.selectedProduct = null;
       })
       .addCase(fetchProductsByIdAsync.fulfilled, (state, action) => {
         state.status = 'idle';
         state.selectedProduct = action.payload;
+        state.error = null;
       })
-      .addCase(createProductAsync.pending,(state)=>{
+      .addCase(fetchProductsByIdAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Failed to load product';
+        state.selectedProduct = null;
+      })
+      .addCase(createProductAsync.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(createProductAsync.fulfilled, (state, action) => {
         state.status = 'idle';
         state.products.push(action.payload);
+        state.error = null;
+      })
+      .addCase(createProductAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload || 'Failed to create product';
       })
       .addCase(updateProductAsync.pending,(state)=>{
         state.status = 'loading';
       })
       .addCase(updateProductAsync.fulfilled, (state, action) => {
         state.status = 'idle';
-        const index = state.products.findIndex((product)=> product.id === action.payload.id)
+        const index = state.products.findIndex((product)=> product.id === action.payload.id);
         state.products[index] = action.payload;
-      })
+      });
   },
 });
 

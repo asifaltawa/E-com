@@ -11,25 +11,40 @@ const initialState = {
 // typically used to make async requests.
 export const fetchLoggedInUserOrdersAsync = createAsyncThunk(
   'user/fetchLoggedInUserOrders',
-  async (userId) => {
-    const response = await fetchLoggedInUserOrders(userId);
-    return response.data;
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await fetchLoggedInUserOrders(userId);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch user orders:', error);
+      return rejectWithValue(error.message || 'Failed to fetch user orders');
+    }
   }
 );
 
 export const updateAddressAsync = createAsyncThunk(
   'user/updateAddress',
-  async (userId) => {
-    const response = await updateAddress(userId);
-    return response.data;
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await updateAddress(userData);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to update address:', error);
+      return rejectWithValue(error.error || 'Failed to update address');
+    }
   }
 );
 
 export const fetchLoggedInUserDataAsync = createAsyncThunk(
   'user/fetchLoggedInUserData',
-  async (userId) => {
-    const response = await fetchLoggedInUserData(userId);
-    return response.data;
+  async (userId, { rejectWithValue }) => {
+    try {
+      const response = await fetchLoggedInUserData(userId);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      return rejectWithValue(error.message || 'Failed to fetch user data');
+    }
   }
 );
 
@@ -52,14 +67,23 @@ export const userSlice = createSlice({
       })
       .addCase(fetchLoggedInUserOrdersAsync.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.userOrders = action.payload;
+        state.userOrders = action.payload || [];
+      })
+      .addCase(fetchLoggedInUserOrdersAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        console.error('User orders fetch failed:', action.payload);
+        state.userOrders = [];
       })
       .addCase(fetchLoggedInUserDataAsync.pending, (state) => {
         state.status = 'loading';
       })
       .addCase(fetchLoggedInUserDataAsync.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.loggedInUserData = action.payload;
+        state.loggedInUserData = action.payload || {};
+      })
+      .addCase(fetchLoggedInUserDataAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        console.error('User data fetch failed:', action.payload);
       })
       .addCase(updateAddressAsync.pending, (state) => {
         state.status = 'loading';

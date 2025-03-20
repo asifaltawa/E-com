@@ -3,9 +3,10 @@ const { CreateProducts,fetchAllProducts, fetchProductsById, updateProducts } = r
 const { fetchAllbrands } = require("../controllers/Brands");
 const { fetchAllcategories } = require("../controllers/Categories");
 const { updateUser, fetchUserById } = require("../controllers/UserDetails");
-const { loginUser, UserSignUp, verifyemail } = require("../controllers/Auth");
+const { loginUser, UserSignUp, verifyemail, resendOTP, forgotPassword, resetPassword } = require("../controllers/Auth");
 const {  fetchCartByUserId, deleteFromCart, updateCart, addToCart } = require("../controllers/Cart");
 const { createOrder, fetchAllOrders, fetchAllOrdersAdmins, updateOrder } = require("../controllers/Order");
+const { verifyToken } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -20,14 +21,21 @@ router.get("/categories",fetchAllcategories)
 router.patch("/user/:id",updateUser).get("/user/:id",fetchUserById)
 router.post("/signup",UserSignUp);
 router.post("/verifyemail",verifyemail);
+router.post("/resendotp",resendOTP);
 router.post("/login",loginUser);
-router.post("/cart",addToCart)
-      .get("/cart",fetchCartByUserId)
-      .delete("/cart/:id",deleteFromCart)
-      .patch("/cart/:id",updateCart)
-router.post("/orders",createOrder)
-      .get("/orders/:id",fetchAllOrders)
-      .get("/orders",fetchAllOrdersAdmins)
-      .patch("/orders/:id",updateOrder)
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
+
+// Protected cart routes
+router.post("/cart", verifyToken, addToCart)
+      .get("/cart", verifyToken, fetchCartByUserId)
+      .delete("/cart/:id", verifyToken, deleteFromCart)
+      .patch("/cart/:id", verifyToken, updateCart)
+
+// Protected order routes
+router.post("/orders", verifyToken, createOrder)
+      .get("/orders/:id", verifyToken, fetchAllOrders)
+      .get("/orders", verifyToken, fetchAllOrdersAdmins)
+      .patch("/orders/:id", verifyToken, updateOrder)
 
 module.exports = router;

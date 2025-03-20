@@ -13,9 +13,15 @@ const initialState = {
 // typically used to make async requests.
 export const CreateOrderAsync = createAsyncThunk(
   'order/CreateOrder',
-  async (order) => {
-    const response = await CreateOrder(order);
-    return response.data;
+  async (order, { rejectWithValue }) => {
+    try {
+      const response = await CreateOrder(order);
+      console.log('Order slice: Order creation response:', response);
+      return response.data;
+    } catch (error) {
+      console.error('Order slice: Order creation error:', error);
+      return rejectWithValue(error);
+    }
   }
 );
 
@@ -60,8 +66,17 @@ export const OrderSlice = createSlice({
       })
       .addCase(CreateOrderAsync.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.orders.push(action.payload);
-        state.currentOrder = action.payload
+        if (action.payload && action.payload.id) {
+          state.orders.push(action.payload);
+          state.currentOrder = action.payload;
+          console.log('Order slice: Order created successfully:', action.payload);
+        } else {
+          console.error('Order slice: Invalid order data received:', action.payload);
+        }
+      })
+      .addCase(CreateOrderAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        console.error('Order slice: Order creation failed:', action.payload);
       })
       .addCase(fetchAllOrdersAsync.pending, (state) => {
         state.status = 'loading';

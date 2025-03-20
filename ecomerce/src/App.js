@@ -17,99 +17,167 @@ import PageNotFound from './pages/PageNotFound';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import MyOrderPage from './pages/MyOrderPage';
 import { fetchLoggedInUserDataAsync } from './features/user/userSlice';
-import { selectUserData } from './features/auth/authSlice';
+import { selectUserData, restoreUser } from './features/auth/authSlice';
 import UserProfilePage from './pages/UserProfilePage';
-import  Signout  from './features/auth/components/Signout';
+import Signout from './features/auth/components/Signout';
 import ForgetPasswordPage from './pages/ForgetPasswordPage';
 import AdminHomePage from './pages/AdminHomePage'
 import ProductForm from './features/admin/components/ProductForm';
 import AdminProtected from './features/auth/components/AdminProtected';
 import AdminOrderPage from './pages/AdminOrderPage';
 import SignUpotp from './pages/SignupOtp';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
+// Create and export the router outside the component
 const router = createBrowserRouter([
   {
-    path : '/',
-    element : <Protected><Home/></Protected>
+    path: '/',
+    element: <Protected><Home/></Protected>,
+    id: 'home',
   },
   {
-    path : '/login',
-    element : <LoginPage/>
+    path: '/login',
+    element: <LoginPage/>,
+    id: 'login',
   },
   {
-    path : '/signup',
-    element : <SignupPage/>
+    path: '/signup',
+    element: <SignupPage/>,
+    id: 'signup',
   },
   {
-    path:'/cart',
-    element:<Protected><CartPage/></Protected>
+    path: '/signup/otpverification',
+    element: <SignUpotp/>,
+    id: 'signup-otp',
   },
   {
-    path:'/checkout',
-    element:<Protected><Checkout/></Protected>
+    path: '/verify-email',
+    element: <SignUpotp/>,
+    id: 'verify-email',
   },
   {
-    path:'/forgetpassword',
-    element:<ForgetPasswordPage/>
+    path: '/cart',
+    element: <Protected><CartPage/></Protected>,
+    id: 'cart',
   },
   {
-    path:'/product-detail/:id',
-    element:<Protected><ProductDetailPage/></Protected>
+    path: '/checkout',
+    element: <Protected><Checkout/></Protected>,
+    id: 'checkout',
   },
   {
-    path:'/order-success/:id',
-    element:<Protected><OrderSuccessPage></OrderSuccessPage></Protected>
+    path: '/forgot-password',
+    element: <ForgetPasswordPage/>,
+    id: 'forgot-password',
   },
   {
-    path:'/my-orders',
-    element:<Protected><MyOrderPage/></Protected>
+    path: '/product-detail/:id',
+    element: <Protected><ProductDetailPage/></Protected>,
+    id: 'product-detail',
   },
   {
-    path:'/profile',
-    element:<Protected><UserProfilePage/></Protected>
+    path: '/order-success/:id',
+    element: <Protected><OrderSuccessPage/></Protected>,
+    id: 'order-success',
   },
   {
-    path:'/signout',
-    element:<Signout/>
+    path: '/my-orders',
+    element: <Protected><MyOrderPage/></Protected>,
+    id: 'my-orders',
   },
   {
-    path:'/admin/home',
-    element:<AdminProtected><AdminHomePage/></AdminProtected>
+    path: '/profile',
+    element: <Protected><UserProfilePage/></Protected>,
+    id: 'profile',
   },
   {
-    path:'/admin/order',
-    element:<AdminProtected><AdminOrderPage/></AdminProtected>
+    path: '/signout',
+    element: <Signout/>,
+    id: 'signout',
   },
   {
-    path:'/admin/product-form',
-    element:<AdminProtected><ProductForm/></AdminProtected>
+    path: '/admin/home',
+    element: <AdminProtected><AdminHomePage/></AdminProtected>,
+    id: 'admin-home',
   },
   {
-    path:'/admin/product-form/edit/:id',
-    element:<AdminProtected><ProductForm/></AdminProtected>
+    path: '/admin/order',
+    element: <AdminProtected><AdminOrderPage/></AdminProtected>,
+    id: 'admin-order',
   },
   {
-    path:'*',
-    element:<PageNotFound></PageNotFound>
+    path: '/admin/product-form',
+    element: <AdminProtected><ProductForm/></AdminProtected>,
+    id: 'admin-product-form',
   },
   {
-    path:'/signup/otpverfication',
-    element:<SignUpotp></SignUpotp>
+    path: '/admin/product-form/edit/:id',
+    element: <AdminProtected><ProductForm/></AdminProtected>,
+    id: 'admin-product-edit',
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage/>,
+    id: 'reset-password',
+  },
+  {
+    path: '*',
+    element: <PageNotFound/>,
+    id: '404',
   }
-])
+]);
+
 function App() {
   const dispatch = useDispatch();
-  const user = useSelector(selectUserData)
+  const user = useSelector(selectUserData);
   
-  useEffect(()=>{
-    if(user){
-      dispatch(fetchCartByIdAsync(user.user.id))
-      dispatch(fetchLoggedInUserDataAsync(user.user.id))
+  // Fetch user data and cart when user is authenticated
+  useEffect(() => {
+    if (user && user.id) {
+      const userId = user.id;
+      console.log('App: Fetching data for authenticated user ID:', userId);
+      dispatch(fetchCartByIdAsync(userId));
+      dispatch(fetchLoggedInUserDataAsync(userId));
+    } else if (user && user.user && user.user.id) {
+      const userId = user.user.id;
+      console.log('App: Fetching data for authenticated user.user.id:', userId);
+      dispatch(fetchCartByIdAsync(userId));
+      dispatch(fetchLoggedInUserDataAsync(userId));
     }
-  },[dispatch,user])
+  }, [dispatch, user]);
+
+  // Fix user data structure on app start - runs only once with a simpler approach
+  useEffect(() => {
+    // We don't want this to run when the Redux store already has the user
+    if (user && (user.id || (user.user && user.user.id))) {
+      console.log('App: User already in Redux state, skipping localStorage check');
+      return;
+    }
+    
+    try {
+      const userDataStr = localStorage.getItem('userData');
+      if (!userDataStr) {
+        console.log('App: No user data in localStorage');
+        return;
+      }
+      
+      const userData = JSON.parse(userDataStr);
+      console.log('App: Checking localStorage user data');
+      
+      // Simple structure fix - doesn't interfere with Protected component
+      if (userData && userData.user && userData.user.id && !userData.id) {
+        console.log('App: Basic user data fix applied');
+        userData.id = userData.user.id;
+        localStorage.setItem('userData', JSON.stringify(userData));
+      }
+    } catch (error) {
+      console.error('App: Error checking localStorage:', error);
+    }
+  }, []); // Empty dependency array - runs once
+
   return (
-    <div >
-      <RouterProvider router={router}/>
+    <div>
+      <RouterProvider router={router} />
     </div>
   );
 }

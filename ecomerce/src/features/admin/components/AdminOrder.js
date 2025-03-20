@@ -86,7 +86,8 @@ const AdminOrder = () => {
               </tr>
             </thead>
             <tbody className="text-gray-600 text-sm font-light ">
-              { orders.map((order,index)=>(
+              {Array.isArray(orders) && orders.length > 0 ? (
+                orders.map((order,index)=>(
                 <tr key={index} className="border-b border-gray-200 hover:bg-gray-100">
                 <td className="py-3 px-6 text-left whitespace-nowrap">
                   <div className="flex items-center">
@@ -96,27 +97,33 @@ const AdminOrder = () => {
                   </div>
                 </td>
                 <td className="py-3 px-6 text-left">
-                  { order.items.map((item,index)=>( 
+                  {Array.isArray(order.items) ? order.items.map((item,index)=>( 
                   <div key={index} className="flex items-center">
                     <div className="mr-2">
                       <img
                         className="w-6 h-6 rounded-full"
-                        src={item.product.thumbnail}
+                        src={item.product?.thumbnail}
+                        alt="Product"
                       />
                     </div>
-                    <span>{item.product.title}- #{item.quantity} * ${discountPrice(item.product.price,item.product.discountPercentage)}</span>
-                  </div>))}
+                    <span>{item.product?.title}- #{item.quantity} * ${item.product ? discountPrice(item.product.price,item.product.discountPercentage) : 0}</span>
+                  </div>)) : <p>No items</p>}
                 </td>
                 <td className="py-3 px-6 text-center">
                     <p>{order.totalAmount}</p>
                 </td>
                 <td className="py-3 px-6 text-center">
-                
-                    <strong>{order.selectAddress[0].name}</strong>
-                    <p>{order.selectAddress[0].streetAddress},</p>
-                    <p>{order.selectAddress[0].city},</p>
-                    <p>{order.selectAddress[0].state},</p>
-                    <p>{order.selectAddress[0].phone}</p>
+                  {order.selectAddress && order.selectAddress.length > 0 ? (
+                    <>
+                      <strong>{order.selectAddress[0].name}</strong>
+                      <p>{order.selectAddress[0].streetAddress},</p>
+                      <p>{order.selectAddress[0].city},</p>
+                      <p>{order.selectAddress[0].state},</p>
+                      <p>{order.selectAddress[0].phone}</p>
+                    </>
+                  ) : (
+                    <p>No address</p>
+                  )}
                 </td>
                 <td className="py-3 px-6 text-center">
                     {order.id === EditOrderId ?
@@ -146,7 +153,13 @@ const AdminOrder = () => {
                   </div>
                 </td>
                 </tr>
-              ))}
+              ))) : (
+                <tr>
+                  <td colSpan="6" className="py-4 px-6 text-center">
+                    <p>No orders found or data is still loading...</p>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

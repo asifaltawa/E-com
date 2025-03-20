@@ -9,60 +9,29 @@ import {
   PlusIcon,
   Squares2X2Icon,
 } from "@heroicons/react/20/solid";
-import { allproducts,fetchFilteredProductsAsync,selectTotalItems,selectBrands,selectCategories,fetchfiltersCategoriesAsync,fetchfiltersBrandsAsync, fetchallproductsAsync} from "../productSlice";
 import { Link } from "react-router-dom";
-import { useSelector,useDispatch } from "react-redux";
 import { ITEMS_PER_PAGE, discountPrice } from "../../../app/const";
 import Pagination from "../../common/Pagination";
+import { products, categories, brands } from '../../../data/products';
 
 const sortOptions = [
   { name: 'Best Rating', sort: 'rating', order: 'desc', current: false },
-   { name: 'Price: Low to High', sort: 'price', order: 'asc', current: false },
-   { name: 'Price: High to Low', sort: 'price', order: 'desc', current: false },
+  { name: 'Price: Low to High', sort: 'price', order: 'asc', current: false },
+  { name: 'Price: High to Low', sort: 'price', order: 'desc', current: false },
 ];
 
-
-// const items = [
-//   {
-//     id: 1,
-//     title: "Back End Developer",
-//     department: "Engineering",
-//     type: "Full-time",
-//     location: "Remote",
-//   },
-//   {
-//     id: 2,
-//     title: "Front End Developer",
-//     department: "Engineering",
-//     type: "Full-time",
-//     location: "Remote",
-//   },
-//   {
-//     id: 3,
-//     title: "User Interface Designer",
-//     department: "Design",
-//     type: "Full-time",
-//     location: "Remote",
-//   },
-// ];
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-
 export default function ProductList() {
-  const dispatch = useDispatch();
   const [filter,setFilter] = useState({})
   const [page,setPage] = useState(1);
   const [sort,setSort] = useState({});
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const products = useSelector(allproducts);
-  const totalItems = useSelector(selectTotalItems);
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  const totalItems = products.length;
   
-  const categories = useSelector(selectCategories)
-  const brands = useSelector(selectBrands)
-
-
   const filters = [
     {
       id: "category",
@@ -74,10 +43,7 @@ export default function ProductList() {
       name: "Brand",
       options: brands
     },
-    
   ];
-
-
 
   const handlechange = (e,section,option)=>{
     const newFilter = {...filter}
@@ -106,18 +72,42 @@ export default function ProductList() {
     
     setPage(page)
   }
-  useEffect(()=>{
-    const pagination = {_page:page,_limit:ITEMS_PER_PAGE}
-    dispatch(fetchFilteredProductsAsync({filter,sort,pagination}))
-  },[dispatch,filter,sort,page])
-  useEffect(()=>{
-    setPage(1)
-  },[totalItems,sort])
-  useEffect(()=>{
-    dispatch(fetchfiltersCategoriesAsync());
-    dispatch(fetchfiltersBrandsAsync());
-    
-  },[dispatch])
+  useEffect(() => {
+    let filteredProducts = [...products];
+
+    // Apply filters
+    if (filter.category && filter.category.length > 0) {
+      filteredProducts = filteredProducts.filter(product => 
+        filter.category.includes(product.category)
+      );
+    }
+    if (filter.brand && filter.brand.length > 0) {
+      filteredProducts = filteredProducts.filter(product => 
+        filter.brand.includes(product.brand)
+      );
+    }
+
+    // Apply sorting
+    if (sort._sort) {
+      filteredProducts.sort((a, b) => {
+        if (sort._order === 'asc') {
+          return a[sort._sort] - b[sort._sort];
+        } else {
+          return b[sort._sort] - a[sort._sort];
+        }
+      });
+    }
+
+    // Apply pagination
+    const startIndex = (page - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    filteredProducts = filteredProducts.slice(startIndex, endIndex);
+
+    setDisplayedProducts(filteredProducts);
+  }, [filter, sort, page]);
+  useEffect(() => {
+    setPage(1);
+  }, [filter, sort]);
   return (
     <>
       <div className="bg-white">
@@ -132,7 +122,7 @@ export default function ProductList() {
 
           <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <DesktopFilter 
-              products={products} 
+              products={displayedProducts} 
               handleSort={handleSort} 
               handlechange={handlechange}
               mobileFiltersOpen={mobileFiltersOpen} 
@@ -148,8 +138,6 @@ export default function ProductList() {
     </>
   );
 }
-
-
 
 function MobileSection({mobileFiltersOpen,setMobileFiltersOpen,handlechange,filters}) {
   return ( 
@@ -255,77 +243,67 @@ function MobileSection({mobileFiltersOpen,setMobileFiltersOpen,handlechange,filt
   );
 }
 
-
 function ProductGrid({products}) {
-  return ( 
+  const handleImageError = (e) => {
+    // Set a fallback image when the original image fails to load
+    e.target.src = 'https://placehold.co/400x400/png?text=Product+Image';
+  };
+
+  return (
     <div className="lg:col-span-3">
-      {
-        <div className="bg-white min-h-80">
-          <div className="mx-auto max-w-2xl px-4 py-0 sm:px-6 sm:py-0 lg:max-w-7xl lg:px-8">
-            <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-              {products.map((product) => (
-                <Link key={product.id} to={`/product-detail/${product.id}`}>
-                  <div key={product.id} className="group relative border-2 border-solid p-2 border-gray-200">
-                    <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-60">
-                      <img
-                        src={product.thumbnail}
-                        alt={product.title}
-                        className="h-full w-full object-cover object-center lg:h-full lg:w-full"
-                      />
-                    </div>
-                    <div className="mt-4 flex justify-between">
-                      <div>
-                        <h3 className="text-sm text-gray-700">
-                          <div href={product.thumbnail}>
-                            <span
-                              aria-hidden="true"
-                              className="absolute inset-0"
-                            />
-                            {product.title}
-                          </div>
-                        </h3>
-                        <p className="mt-1 text-sm text-gray-500">
-                        <StarIcon className="w-6 h-6 inline" />
-                          <span className="align-middle">
-                            {product.rating}
-                          </span>
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-400 line-through">
-                          ${product.price}
-                        </p>
-                        <p className="text-sm font-medium text-gray-900">
-                          ${discountPrice(product.price,product.discountPercentage)}
-                        </p>
-                      </div>
-                    </div>
-                    {product.deleted && (
-                      <div>
-                        <p className="text-sm text-red-400">product deleted</p>
-                      </div>
-                    )}
-                    {
-                      product.stock <= 0 && (
-                        <div>
-                          <p className="text-sm text-red-400">Out of Stock</p>
-                        </div>
-                      )
-                    }
+      <div className="bg-white min-h-80">
+        <div className="mx-auto max-w-2xl px-4 py-0 sm:px-6 sm:py-0 lg:max-w-7xl lg:px-8">
+          <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:gap-x-8">
+            {products.map((product) => (
+              <Link key={product.id} to={`/product-detail/${product.id}`}>
+                <div className="group relative border-2 border-solid p-2 border-gray-200">
+                  <div className="aspect-h-1 aspect-w-1 w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-none group-hover:opacity-75 lg:h-60">
+                    <img
+                      src={product.thumbnail || product.images[0]}
+                      alt={product.title}
+                      className="h-full w-full object-cover object-center lg:h-full lg:w-full"
+                      onError={handleImageError}
+                    />
                   </div>
-                </Link>
-              ))}
-            </div>
+                  <div className="mt-4 flex justify-between">
+                    <div>
+                      <h3 className="text-sm text-gray-700">
+                        <span aria-hidden="true" className="absolute inset-0" />
+                        {product.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        <StarIcon className="w-6 h-6 inline" />
+                        <span className="align-middle">{product.rating}</span>
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-400 line-through">
+                        ${product.price}
+                      </p>
+                      <p className="text-sm font-medium text-gray-900">
+                        ${discountPrice(product.price, product.discountPercentage)}
+                      </p>
+                    </div>
+                  </div>
+                  {product.deleted && (
+                    <div>
+                      <p className="text-sm text-red-400">product deleted</p>
+                    </div>
+                  )}
+                  {product.stock <= 0 && (
+                    <div>
+                      <p className="text-sm text-red-400">Out of Stock</p>
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
-      }
+      </div>
     </div>
-   );
+  );
 }
-
-
-
-
 
 function DesktopFilter({handleSort,handlechange,mobileFiltersOpen,setMobileFiltersOpen,products,filters}) {
   return ( 

@@ -9,6 +9,7 @@ import { useForm } from "react-hook-form"
 import { CreateOrderAsync,selectCurrentOrder } from '../features/orders/OrderSlice';
 import { selectLoggedInUserData, updateAddressAsync } from '../features/user/userSlice';
 import { discountPrice } from '../app/const';
+import Navbar from '../features/Navbar';
 
 const Checkout = () => {
   const dispatch = useDispatch();
@@ -23,30 +24,77 @@ const Checkout = () => {
   const user = useSelector(selectLoggedInUserData);
   console.log("user");
   console.log(user);
-  const totalAmount = items.reduce(
-    (amount,item) => discountPrice(item.product.price,item.product.discountPercentage) * item.quantity + amount,
-    0
-  );
+  const totalAmount = items && items.length 
+    ? items.reduce((amount, item) => {
+        if (!item || !item.product) return amount;
+        const price = item.product.price || 0;
+        const discount = item.product.discountPercentage || 0;
+        const quantity = item.quantity || 1;
+        return discountPrice(price, discount) * quantity + amount;
+      }, 0)
+    : 0;
   const handlePayment = (e)=>{
     console.log(e.target.value)
     setPaymentMethod(e.target.value)
   }
-  const handleAddress = (e)=>{
-    console.log(e.target.value);
-    setSelectAddress(user.addresses[e.target.value])
+  const handleAddress = (e) => {
+    console.log('Address selection:', e.target.value);
+    if(user && user.addresses && user.addresses.length > parseInt(e.target.value)) {
+      setSelectAddress(user.addresses[parseInt(e.target.value)]);
+    } else {
+      console.error('Invalid address selection or user addresses not loaded');
+    }
   }
-  const totalItems = items.reduce((total, item) => item.quantity + total, 0);
+  const totalItems = items && items.length
+    ? items.reduce((total, item) => (item && item.quantity ? item.quantity : 0) + total, 0)
+    : 0;
   const handleDelete = (e,id)=>{
     dispatch(DeleteCartAsync(id))
   }
   const handleChange = (e,item)=>{
     dispatch(updateCartAsync({id:item.id,quantity:+e.target.value}))
   }
-  const handleOrders = (e)=>{
-    // console.log(e.target.value);
-    if(selectAddress && paymentMethod){
-        const order = {items,totalAmount,totalItems,user:user.id,paymentMethod,selectAddress,status:'pending'};
-        dispatch(CreateOrderAsync(order))
+  const handleOrders = async (e) => {
+    // Check all required fields before creating order
+    if(!user || !user.id) {
+      alert('You must be logged in to place an order');
+      return;
+    }
+    
+    if(!selectAddress) {
+      alert('Please select a shipping address');
+      return;
+    }
+    
+    if(!paymentMethod) {
+      alert('Please select a payment method');
+      return;
+    }
+    
+    if(!items || items.length === 0) {
+      alert('Your cart is empty');
+      return;
+    }
+    
+    // Create the order with proper validation
+    const order = {
+      items,
+      totalAmount,
+      totalItems,
+      user: user.id,
+      paymentMethod,
+      selectAddress,
+      status: 'pending'
+    };
+    
+    console.log('Creating order:', order);
+    try {
+      const result = await dispatch(CreateOrderAsync(order)).unwrap();
+      console.log('Order created successfully:', result);
+      // The redirection will be handled by the useEffect watching currentOrder
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      alert(error.message || 'Failed to create order. Please try again.');
     }
   }
   return (
@@ -190,7 +238,7 @@ const Checkout = () => {
                                     Choose from existing address
                                 </p>
                                 <ul  className="divide-y divide-gray-100">
-                                    {user.addresses.map((address,index) => (
+                                    {user && user.addresses && user.addresses.map((address,index) => (
                     
                                         <li key={index} className="flex justify-between gap-x-6 py-5 border-solid border-2 border-gray-200 px-5">
                                             <div className="flex min-w-0 gap-x-4">
@@ -262,58 +310,65 @@ const Checkout = () => {
                     <div className="mt-8">
                         <h1 className="text-4xl my-5 font-bold tracking-tight text-gray-900">Cart</h1>
                                     <div className="flow-root">
-                                    <ul  className="-my-6 divide-y divide-gray-200">
-                                        {items.map((item) => (
-                                        <li key={item.id} className="flex py-6">
-                                            <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
-                                            <img
-                                                src={item.product.images[0]}
-                                                alt={item.product.title}
-                                                className="h-full w-full object-cover object-center"
-                                            />
-                                            </div>
+                                    <ul className="-my-6 divide-y divide-gray-200">
+                                        {items && items.length > 0 ? items.map((item) => (
+                                            item && item.product ? (
+                                                <li key={item.id} className="flex py-6">
+                                                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                                                        <img
+                                                            src={item.product.thumbnail || (item.product.images && item.product.images.length > 0 ? item.product.images[0] : null)}
+                                                            alt={item.product.title}
+                                                            className="h-full w-full object-cover object-center"
+                                                            onError={(e) => {
+                                                                e.target.src = 'https://placehold.co/400x400/png?text=Product+Image';
+                                                            }}
+                                                        />
+                                                    </div>
 
-                                            <div className="ml-4 flex flex-1 flex-col">
-                                            <div>
-                                                <div className="flex justify-between text-base font-medium text-gray-900">
-                                                <h3>
-                                                    <a href={item.href}>{item.product.title}</a>
-                                                </h3>
-                                                <div>
-                                                    <p className="ml-4 text-gray-400 line-through">${item.product.price}</p>
-                                                    <p className="ml-4">${discountPrice(item.product.price,item.product.discountPercentage)}</p>
-                                                </div>
-                                                
-                                                
-                                                </div>
-                                                <p className="mt-1 text-sm text-gray-500">{item.product.category}</p>
-                                            </div>
-                                            <div className="flex flex-1 items-end justify-between text-sm">
-                                                <div className='text-gray-500'>
-                                                <label htmlFor="quantity" className="inline mr-5 text-sm font-medium leading-6 text-gray-900">
-                                                    Qty
-                                                </label>
-                                                <select onChange={(e)=>handleChange(e,item)} value={item.quantity}>
-                                                    <option value={1}>1</option>
-                                                    <option value={2}>2</option>
-                                                    <option value={3}>3</option>
-                                                    <option value={4}>4</option>
-                                                    <option value={5}>5</option>
-                                                </select>
-                                                </div>
-                                                <div className="flex">
-                                                <button
-                                                    onClick={e=>handleDelete(e,item.id)}
-                                                    type="button"
-                                                    className="font-medium text-indigo-600 hover:text-indigo-500"
-                                                >
-                                                    Remove
-                                                </button>
-                                                </div>
-                                            </div>
-                                            </div>
-                                        </li>
-                                        ))}
+                                                    <div className="ml-4 flex flex-1 flex-col">
+                                                        <div>
+                                                            <div className="flex justify-between text-base font-medium text-gray-900">
+                                                                <h3>
+                                                                    <a href={item.href}>{item.product.title}</a>
+                                                                </h3>
+                                                                <div>
+                                                                    <p className="ml-4 text-gray-400 line-through">${item.product.price}</p>
+                                                                    <p className="ml-4">${discountPrice(item.product.price,item.product.discountPercentage)}</p>
+                                                                </div>
+                                                            </div>
+                                                            <p className="mt-1 text-sm text-gray-500">{item.product.category}</p>
+                                                        </div>
+                                                        <div className="flex flex-1 items-end justify-between text-sm">
+                                                            <div className='text-gray-500'>
+                                                                <label htmlFor="quantity" className="inline mr-5 text-sm font-medium leading-6 text-gray-900">
+                                                                    Qty
+                                                                </label>
+                                                                <select onChange={(e)=>handleChange(e,item)} value={item.quantity}>
+                                                                    <option value={1}>1</option>
+                                                                    <option value={2}>2</option>
+                                                                    <option value={3}>3</option>
+                                                                    <option value={4}>4</option>
+                                                                    <option value={5}>5</option>
+                                                                </select>
+                                                            </div>
+                                                            <div className="flex">
+                                                                <button
+                                                                    onClick={e=>handleDelete(e,item.id)}
+                                                                    type="button"
+                                                                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            ) : null
+                                        )) : (
+                                            <li className="py-6 text-center">
+                                                Your cart is empty
+                                            </li>
+                                        )}
                                     </ul>
                                     </div>
                                 </div>

@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
     order:{type:[mongoose.Schema.Types.Mixed]},
     active:{type:Boolean,default:false},
     otp:{type: String,required: true},
+    resetPasswordOtp: {type: String},
+    resetPasswordExpires: {type: Date},
     expireAt: {
         type: Date,
         default: Date.now,

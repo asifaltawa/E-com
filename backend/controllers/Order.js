@@ -19,16 +19,26 @@ exports.createOrder = async(req,res)=>{
 
 exports.fetchAllOrders = async(req,res)=>{
     try{
-        const user = req.params.id
-        const orders = await Order.find({user}).populate('user')
-        res.status(200).json(orders)
+        // Get user ID from params or use authenticated user's ID
+        const userId = req.params.id || req.user?.id;
+        
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required",
+                data: "Please provide a valid user ID"
+            });
+        }
+
+        const orders = await Order.find({user: userId}).populate('user');
+        res.status(200).json(orders);
     }catch(error){
         console.log(error);
         return res.status(500).json({
-            success:false,
-            message:"Internal Server Error",
-            data:error.message
-        })
+            success: false,
+            message: "Internal Server Error",
+            data: error.message
+        });
     }
 }
 
@@ -40,7 +50,7 @@ exports.fetchAllOrdersAdmins = async(req,res)=>{
     if(req.query._sort && req.query._order){
         query = query.sort({[req.query._sort]:req.query._order})
     }
-    const totaldocs = await totalquery.count().exec();
+    const totaldocs = await totalquery.countDocuments().exec();
     console.log(totaldocs)
 
     if(req.query._page && req.query._limit){

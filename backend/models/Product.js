@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 const productSchema = new mongoose.Schema({
+    numericId: {
+        type: Number,
+        unique: true,
+        required: true,
+        index: true
+    },
     title:{
         type:String,
         require:true,
@@ -24,7 +30,6 @@ const productSchema = new mongoose.Schema({
         type:Number,
         min:[0,"wrong min rating"],
         max:[5,"wrong max rating"],
-        
     },
     stock:{
         type:Number,
@@ -32,10 +37,6 @@ const productSchema = new mongoose.Schema({
         default:0
     },
     brand:{
-        type:String,
-        require:true,
-    },
-    category:{
         type:String,
         require:true,
     },
@@ -67,4 +68,5 @@ productSchema.set('toJSON',{
     versionKey:false,
     transform: function(doc,ret){delete ret._id}
 })
+
 module.exports = mongoose.model("Product",productSchema);

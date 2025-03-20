@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 // import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid'
 import { useForm } from 'react-hook-form';
 import { clearSelectedProducts, createProductAsync, fetchProductsByIdAsync, selectBrands, selectCategories, selectProductsById, updateProductAsync } from '../../product/productSlice';
@@ -12,14 +12,16 @@ const ProductForm = () => {
         setValue,
         reset,
         formState: { errors },
+        setError
       } = useForm();
     const brands = useSelector(selectBrands);
     const categories = useSelector(selectCategories)
     const dispatch = useDispatch();
     const selectedProduct = useSelector(selectProductsById);
     const params = useParams();
+    const [submitError, setSubmitError] = useState(null);
 
-      console.log()
+      console.log('ProductForm component initialized');
       
       useEffect(() => {
         if (params.id) {
@@ -33,18 +35,27 @@ const ProductForm = () => {
     
       useEffect(() => {
         if (selectedProduct && params.id) {
-          setValue('title', selectedProduct.title);
-          setValue('description', selectedProduct.description);
-          setValue('price', selectedProduct.price);
-          setValue('discountPercentage', selectedProduct.discountPercentage);
-          setValue('thumbnail', selectedProduct.thumbnail);
-          setValue('stock', selectedProduct.stock);
-          setValue('image1', selectedProduct.images[0]);
-          setValue('image2', selectedProduct.images[1]);
-          setValue('image3', selectedProduct.images[2]);
-          setValue('image4', selectedProduct.images[3]);
-          setValue('brand', selectedProduct.brand);
-          setValue('category', selectedProduct.category);
+          setValue('title', selectedProduct.title || '');
+          setValue('description', selectedProduct.description || '');
+          setValue('price', selectedProduct.price || 0);
+          setValue('discountPercentage', selectedProduct.discountPercentage || 0);
+          setValue('thumbnail', selectedProduct.thumbnail || '');
+          setValue('stock', selectedProduct.stock || 0);
+          
+          if (selectedProduct.images && Array.isArray(selectedProduct.images)) {
+            setValue('image1', selectedProduct.images[0] || '');
+            setValue('image2', selectedProduct.images[1] || '');
+            setValue('image3', selectedProduct.images[2] || '');
+            setValue('image4', selectedProduct.images[3] || '');
+          } else {
+            setValue('image1', '');
+            setValue('image2', '');
+            setValue('image3', '');
+            setValue('image4', '');
+          }
+          
+          setValue('brand', selectedProduct.brand || '');
+          setValue('category', selectedProduct.category || '');
         }
       }, [selectedProduct, params.id, setValue]);
     
@@ -55,36 +66,59 @@ const ProductForm = () => {
 
       }
     
+    const onSubmit = async (data) => {
+        try {
+            console.log("Form data:", data);
+            const product = {...data};
+            
+            product.images = [
+                product.image1 || '',
+                product.image2 || '',
+                product.image3 || '',
+                product.image4 || ''
+            ];
+            
+            delete product.image1;
+            delete product.image2;
+            delete product.image3;
+            delete product.image4;
+            
+            product.price = +product.price || 0;
+            product.discountPercentage = +product.discountPercentage || 0;
+            product.stock = +product.stock || 0;
+            
+            if(params.id){
+                product.id = params.id;
+                product.rating = selectedProduct?.rating || 0;
+                await dispatch(updateProductAsync(product)).unwrap();
+            } else {
+                await dispatch(createProductAsync(product)).unwrap();
+            }
+            setSubmitError(null);
+            reset();
+        } catch (error) {
+            console.error('Form submission error:', error);
+            setSubmitError(error.message || 'Failed to save product. Please try again.');
+            if (error.message.includes('already exists')) {
+                setError('title', {
+                    type: 'manual',
+                    message: error.message
+                });
+            }
+        }
+    };
+
   return (
    
         <form
             noValidate
-            onSubmit={handleSubmit((data)=>{
-                console.log(data);
-                const product = {...data};
-                product.images = [product.image1,product.image2,product.image3,product.image4]
-                delete product.image1
-                delete product.image2
-                delete product.image3
-                delete product.image4
-                product.price = +product.price;
-                product.discountPercentage = +product.discountPercentage;
-                product.stock = +product.stock;
-                console.log("product price");
-                console.log(product);
-                if(params.id){
-                    product.id = params.id
-                    product.rating = selectedProduct.rating || 0
-                    dispatch(updateProductAsync(product));
-                    reset();
-                }
-                else{
-                    dispatch(createProductAsync(product));
-                    reset();
-                }
-                console.log(product);
-            })}
+            onSubmit={handleSubmit(onSubmit)}
         >
+        {submitError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600">{submitError}</p>
+            </div>
+        )}
         <div className="space-y-12 bg-white p-12">
         <div className="border-b border-gray-900/10 pb-12">
           <h2 className="text-base font-semibold leading-7 text-gray-900">
